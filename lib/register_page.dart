@@ -90,9 +90,6 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: const Color(0xFFF5F0EB),
       body: Column(
         children: [
-          // ─── Top Bar ───
-          _buildTopBar(),
-
           // ─── Scrollable Content ───
           Expanded(
             child: SingleChildScrollView(
@@ -283,53 +280,6 @@ class _RegisterPageState extends State<RegisterPage> {
   //  WIDGETS
   // ═══════════════════════════════════════════════════════════════════════
 
-  // ─── Top Bar ───────────────────────────────────────────────────────────
-  Widget _buildTopBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
-        left: 20,
-        right: 20,
-        bottom: 14,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF4A3728),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'SCENTVAULT',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 3.5,
-            ),
-          ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white38, width: 1.5),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6B8F71), Color(0xFF3D5A40)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ─── Field Label ──────────────────────────────────────────────────────
   Widget _buildLabel(String text) {
     return Text(
@@ -357,10 +307,7 @@ class _RegisterPageState extends State<RegisterPage> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: const TextStyle(
-          fontSize: 15,
-          color: Color(0xFF3A2A1D),
-        ),
+        style: const TextStyle(fontSize: 15, color: Color(0xFF3A2A1D)),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(
@@ -452,17 +399,11 @@ class _RegisterPageState extends State<RegisterPage> {
             color: const Color(0xFF5C3D2E).withValues(alpha: 0.5),
             size: 26,
           ),
-          style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF3A2A1D),
-          ),
+          style: const TextStyle(fontSize: 15, color: Color(0xFF3A2A1D)),
           dropdownColor: const Color(0xFFF5F0EB),
           borderRadius: BorderRadius.circular(12),
           items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
+            return DropdownMenuItem<String>(value: item, child: Text(item));
           }).toList(),
           onChanged: onChanged,
         ),
@@ -486,10 +427,7 @@ class _RegisterPageState extends State<RegisterPage> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
-            side: const BorderSide(
-              color: Color(0xFFB09A85),
-              width: 1.5,
-            ),
+            side: const BorderSide(color: Color(0xFFB09A85), width: 1.5),
             activeColor: const Color(0xFF5C3D2E),
             checkColor: Colors.white,
           ),
@@ -499,10 +437,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: RichText(
             text: const TextSpan(
               text: 'Saya setuju dengan ',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF8C7B6B),
-              ),
+              style: TextStyle(fontSize: 13, color: Color(0xFF8C7B6B)),
               children: [
                 TextSpan(
                   text: 'Syarat & Ketentuan',
@@ -530,11 +465,7 @@ class _RegisterPageState extends State<RegisterPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF8B6914),
-              Color(0xFFC8943E),
-              Color(0xFFD4A956),
-            ],
+            colors: [Color(0xFF8B6914), Color(0xFFC8943E), Color(0xFFD4A956)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),

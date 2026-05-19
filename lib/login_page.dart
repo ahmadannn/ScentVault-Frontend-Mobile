@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_pertama/register_page.dart';
+import 'package:project_pertama/main_navigation.dart';
 
 class LoginPage extends StatefulWidget {
   final String title;
@@ -28,9 +29,6 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: const Color(0xFFF5F0EB),
       body: Column(
         children: [
-          // ─── Top Bar ───
-          _buildTopBar(),
-
           // ─── Scrollable Content ───
           Expanded(
             child: SingleChildScrollView(
@@ -42,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // ─── Welcome Text ───
                   const Text(
-                    'Selamat Datang Kembali',
+                    'Selamat Datang ',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
@@ -131,53 +129,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ─── Top Bar ───────────────────────────────────────────────────────────
-  Widget _buildTopBar() {
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 12,
-        left: 20,
-        right: 20,
-        bottom: 14,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF4A3728),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'SCENTVAULT',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 3.5,
-            ),
-          ),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white38, width: 1.5),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6B8F71), Color(0xFF3D5A40)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ─── Field Label ──────────────────────────────────────────────────────
   Widget _buildLabel(String text) {
     return Align(
@@ -211,10 +162,7 @@ class _LoginPageState extends State<LoginPage> {
       child: TextField(
         controller: _emailController,
         keyboardType: TextInputType.emailAddress,
-        style: const TextStyle(
-          fontSize: 15,
-          color: Color(0xFF3A2A1D),
-        ),
+        style: const TextStyle(fontSize: 15, color: Color(0xFF3A2A1D)),
         decoration: InputDecoration(
           hintText: 'nama@email.com',
           hintStyle: TextStyle(
@@ -293,11 +241,7 @@ class _LoginPageState extends State<LoginPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF8B6914),
-              Color(0xFFC8943E),
-              Color(0xFFD4A956),
-            ],
+            colors: [Color(0xFF8B6914), Color(0xFFC8943E), Color(0xFFD4A956)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
@@ -311,7 +255,10 @@ class _LoginPageState extends State<LoginPage> {
         ),
         child: ElevatedButton(
           onPressed: () {
-            // nanti kita isi navigasi di sini
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainNavigation()),
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
