@@ -20,6 +20,7 @@ class _HomePageState extends State<HomePage> {
     _homeData = Future.wait([
       ApiService.getHomePageData(),
       ApiService.getProfile(),
+      ApiService.getCollectionPageData(),
     ]);
   }
 
@@ -47,12 +48,27 @@ class _HomePageState extends State<HomePage> {
             final userData = profileRes['data'] ?? {};
             final String rawName = userData['name'] ?? 'Kurator';
             final String firstName = rawName.split(' ').first;
+            final String? userPhotoUrl = userData['image_url'];
 
             final stats = data['summary'] ?? {};
             final recommendationData = data['today_recommendation']?['perfume'];
             final recentLogs = data['scent_logs'] as List<dynamic>? ?? [];
 
+            final collectionRes = snapshot.data?[2] ?? {};
+            final perfumesList = collectionRes['data']?['perfumes']?['data'] as List<dynamic>? ?? [];
+
             final recommendation = recommendationData;
+            String? recImageUrl;
+            if (recommendation != null) {
+              recImageUrl = recommendation['image_url'] ?? recommendation['image'];
+              if (recImageUrl == null && perfumesList.isNotEmpty) {
+                try {
+                  final pId = recommendation['perfume_id'];
+                  final match = perfumesList.firstWhere((p) => p['id'].toString() == pId.toString());
+                  recImageUrl = match['image_url'];
+                } catch (_) {}
+              }
+            }
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -60,7 +76,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top Bar
-                  const CustomTopBar(),
+                  CustomTopBar(photoUrl: userPhotoUrl != null ? ApiService.fixImageUrl(userPhotoUrl) : null),
                   const SizedBox(height: 24),
                   
                   // Welcome Text
@@ -132,9 +148,13 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               height: 160,
                               color: const Color(0xFFEBE6DF),
-                              child: ApiService.fixImageUrl(recommendation['image']).isNotEmpty
-                                  ? Image.network(ApiService.fixImageUrl(recommendation['image']), fit: BoxFit.cover)
-                                  : const Center(child: Icon(Icons.image, size: 50, color: Colors.black12)),
+                              child: recImageUrl != null && ApiService.fixImageUrl(recImageUrl).isNotEmpty
+                                  ? Image.network(
+                                      ApiService.fixImageUrl(recImageUrl), 
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
+                                    )
+                                  : Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
                             ),
                           ),
                           Padding(
@@ -150,20 +170,17 @@ class _HomePageState extends State<HomePage> {
                                     color: Color(0xFF2E2B2A),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  data['today_recommendation']?['message'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF9E958D),
-                                    height: 1.5,
-                                  ),
-                                ),
+
                                 const SizedBox(height: 16),
-                                if (recommendation['notes'] != null && recommendation['notes'] is List)
+                                if (recommendation['notes'] != null)
                                   Wrap(
-                                    children: (recommendation['notes'] as List<dynamic>)
-                                        .map((note) => _buildTag(note is Map ? note['name'] : note.toString()))
+                                    children: (recommendation['notes'] is List
+                                            ? recommendation['notes'] as List<dynamic>
+                                            : recommendation['notes'].toString().replaceAll('{', '').replaceAll('}', '').split(','))
+                                        .map((note) {
+                                          final text = note is Map ? note['name'] : note.toString().trim();
+                                          return text.isNotEmpty ? _buildTag(text) : const SizedBox.shrink();
+                                        })
                                         .toList(),
                                   ),
                                 const SizedBox(height: 16),

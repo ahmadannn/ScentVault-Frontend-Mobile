@@ -215,8 +215,12 @@ class _DetailPageState extends State<DetailPage> {
                 height: 300,
                 color: const Color(0xFFEBE6DF),
                 child: ApiService.fixImageUrl(imageUrl).isNotEmpty
-                    ? Image.network(ApiService.fixImageUrl(imageUrl), fit: BoxFit.cover)
-                    : const Icon(Icons.image, size: 80, color: Colors.black12),
+                    ? Image.network(
+                        ApiService.fixImageUrl(imageUrl), 
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
+                      )
+                    : Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
               ),
             ),
           ),

@@ -346,8 +346,12 @@ class _CollectionPageState extends State<CollectionPage> {
                   width: 100,
                   height: 100,
                   child: imageUrl.isNotEmpty
-                      ? Image.network(imageUrl, fit: BoxFit.cover)
-                      : const Center(child: Icon(Icons.image, color: Colors.black12)),
+                      ? Image.network(
+                          imageUrl, 
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
+                        )
+                      : Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(width: 16),

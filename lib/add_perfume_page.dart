@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_pertama/services/api_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shimmer/shimmer.dart';
 import 'dart:typed_data';
 
 class AddPerfumePage extends StatefulWidget {
@@ -158,7 +159,7 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
       backgroundColor: const Color(0xFFFCFAF8),
       body: SafeArea(
         child: _categories.isEmpty 
-        ? const Center(child: CircularProgressIndicator())
+        ? _buildShimmerSkeleton()
         : SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
@@ -559,6 +560,51 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildShimmerSkeleton() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+      child: Shimmer.fromColors(
+        baseColor: const Color(0xFFEBE6DF),
+        highlightColor: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: double.infinity, height: 24, color: Colors.white),
+            const SizedBox(height: 32),
+            Center(
+              child: Container(
+                width: 180,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Container(width: 100, height: 12, color: Colors.white),
+            const SizedBox(height: 8),
+            Container(width: double.infinity, height: 48, color: Colors.white),
+            const SizedBox(height: 16),
+            Container(width: 100, height: 12, color: Colors.white),
+            const SizedBox(height: 8),
+            Container(width: double.infinity, height: 48, color: Colors.white),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: Container(height: 48, color: Colors.white)),
+                const SizedBox(width: 16),
+                Expanded(child: Container(height: 48, color: Colors.white)),
+              ],
+            ),
+            const SizedBox(height: 32),
+            Container(width: double.infinity, height: 48, color: Colors.white),
+          ],
+        ),
+      ),
     );
   }
 }
