@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_pertama/register_page.dart';
 import 'package:project_pertama/main_navigation.dart';
+import 'package:project_pertama/services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   final String title;
@@ -13,8 +14,45 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
+  bool _isLoading = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email dan password harus diisi')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final response = await ApiService.login(email, password);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response['token'] != null) {
+      await ApiService.setToken(response['token']);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Login gagal. Cek email dan password Anda.')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -254,12 +292,7 @@ class _LoginPageState extends State<LoginPage> {
           ],
         ),
         child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainNavigation()),
-            );
-          },
+          onPressed: _isLoading ? null : _handleLogin,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -267,15 +300,21 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(30),
             ),
           ),
-          child: const Text(
-            'MASUK',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 3,
-            ),
-          ),
+          child: _isLoading 
+              ? const SizedBox(
+                  width: 24, 
+                  height: 24, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                )
+              : const Text(
+                  'MASUK',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 3,
+                  ),
+                ),
         ),
       ),
     );

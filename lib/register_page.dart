@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:project_pertama/services/api_service.dart';
+import 'package:project_pertama/main_navigation.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -12,6 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeTerms = false;
+  bool _isLoading = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -20,60 +23,58 @@ class _RegisterPageState extends State<RegisterPage> {
       TextEditingController();
 
   // ─── Dropdown values ───
-  String? _selectedProvinsi;
-  String? _selectedKabupatenKota;
-  String? _selectedKabupatenKota2;
-  String? _selectedKecamatan;
-  String? _selectedKelurahan;
+  String? _selectedProvinsiCode;
+  String? _selectedKabupatenKotaCode;
+  String? _selectedKecamatanCode;
+  String? _selectedKelurahanCode;
 
-  // ─── Sample data for dropdowns ───
-  final List<String> _provinsiList = [
-    'DKI Jakarta',
-    'Jawa Barat',
-    'Jawa Tengah',
-    'Jawa Timur',
-    'Banten',
-    'Yogyakarta',
-    'Bali',
-    'Sumatera Utara',
-    'Sumatera Barat',
-    'Sulawesi Selatan',
-  ];
+  List<dynamic> _provinsiList = [];
+  List<dynamic> _kabupatenKotaList = [];
+  List<dynamic> _kecamatanList = [];
+  List<dynamic> _kelurahanList = [];
 
-  final List<String> _kabupatenKotaList = [
-    'Jakarta Selatan',
-    'Jakarta Pusat',
-    'Jakarta Barat',
-    'Jakarta Timur',
-    'Jakarta Utara',
-    'Bandung',
-    'Surabaya',
-    'Semarang',
-    'Yogyakarta',
-    'Denpasar',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchProvinces();
+  }
 
-  final List<String> _kecamatanList = [
-    'Kebayoran Baru',
-    'Menteng',
-    'Tanah Abang',
-    'Setiabudi',
-    'Tebet',
-    'Pancoran',
-    'Mampang Prapatan',
-    'Pasar Minggu',
-  ];
+  Future<void> _fetchProvinces() async {
+    final data = await ApiService.getProvinces();
+    setState(() {
+      _provinsiList = data;
+    });
+  }
 
-  final List<String> _kelurahanList = [
-    'Senayan',
-    'Selong',
-    'Gunung',
-    'Pulo',
-    'Melawai',
-    'Kramat Pela',
-    'Cipete Utara',
-    'Gandaria Utara',
-  ];
+  Future<void> _fetchRegencies(String provinceCode) async {
+    final data = await ApiService.getRegencies(provinceCode);
+    setState(() {
+      _kabupatenKotaList = data;
+      _selectedKabupatenKotaCode = null;
+      _kecamatanList = [];
+      _selectedKecamatanCode = null;
+      _kelurahanList = [];
+      _selectedKelurahanCode = null;
+    });
+  }
+
+  Future<void> _fetchDistricts(String regencyCode) async {
+    final data = await ApiService.getDistricts(regencyCode);
+    setState(() {
+      _kecamatanList = data;
+      _selectedKecamatanCode = null;
+      _kelurahanList = [];
+      _selectedKelurahanCode = null;
+    });
+  }
+
+  Future<void> _fetchVillages(String districtCode) async {
+    final data = await ApiService.getVillages(districtCode);
+    setState(() {
+      _kelurahanList = data;
+      _selectedKelurahanCode = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -82,6 +83,54 @@ class _RegisterPageState extends State<RegisterPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text;
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty || _selectedKelurahanCode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semua field dan wilayah (hingga kelurahan) harus diisi')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kata sandi dan konfirmasi tidak cocok')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final response = await ApiService.register(name, email, password, confirmPassword, _selectedKelurahanCode!);
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response['token'] != null) {
+      await ApiService.setToken(response['token']);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrasi berhasil!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Registrasi gagal. Silakan coba lagi.')),
+      );
+    }
   }
 
   @override
@@ -171,11 +220,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   _buildLabel('PROVINSI'),
                   const SizedBox(height: 8),
                   _buildDropdownField(
-                    value: _selectedProvinsi,
+                    value: _selectedProvinsiCode,
                     hint: 'Pilih Provinsi',
                     items: _provinsiList,
                     onChanged: (val) {
-                      setState(() => _selectedProvinsi = val);
+                      setState(() => _selectedProvinsiCode = val);
+                      if (val != null) _fetchRegencies(val);
                     },
                   ),
                   const SizedBox(height: 18),
@@ -184,24 +234,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   _buildLabel('KABUPATEN/KOTA'),
                   const SizedBox(height: 8),
                   _buildDropdownField(
-                    value: _selectedKabupatenKota,
+                    value: _selectedKabupatenKotaCode,
                     hint: 'Pilih Kabupaten/Kota',
                     items: _kabupatenKotaList,
                     onChanged: (val) {
-                      setState(() => _selectedKabupatenKota = val);
-                    },
-                  ),
-                  const SizedBox(height: 18),
-
-                  // ─── Kabupaten/Kota 2 ───
-                  _buildLabel('KABUPATEN/KOTA'),
-                  const SizedBox(height: 8),
-                  _buildDropdownField(
-                    value: _selectedKabupatenKota2,
-                    hint: 'Pilih Kabupaten/Kota',
-                    items: _kabupatenKotaList,
-                    onChanged: (val) {
-                      setState(() => _selectedKabupatenKota2 = val);
+                      setState(() => _selectedKabupatenKotaCode = val);
+                      if (val != null) _fetchDistricts(val);
                     },
                   ),
                   const SizedBox(height: 18),
@@ -210,11 +248,12 @@ class _RegisterPageState extends State<RegisterPage> {
                   _buildLabel('KECAMATAN'),
                   const SizedBox(height: 8),
                   _buildDropdownField(
-                    value: _selectedKecamatan,
+                    value: _selectedKecamatanCode,
                     hint: 'Pilih Kecamatan',
                     items: _kecamatanList,
                     onChanged: (val) {
-                      setState(() => _selectedKecamatan = val);
+                      setState(() => _selectedKecamatanCode = val);
+                      if (val != null) _fetchVillages(val);
                     },
                   ),
                   const SizedBox(height: 18),
@@ -223,11 +262,11 @@ class _RegisterPageState extends State<RegisterPage> {
                   _buildLabel('KELURAHAN/DESA'),
                   const SizedBox(height: 8),
                   _buildDropdownField(
-                    value: _selectedKelurahan,
+                    value: _selectedKelurahanCode,
                     hint: 'Pilih Kelurahan/Desa',
                     items: _kelurahanList,
                     onChanged: (val) {
-                      setState(() => _selectedKelurahan = val);
+                      setState(() => _selectedKelurahanCode = val);
                     },
                   ),
                   const SizedBox(height: 22),
@@ -374,7 +413,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildDropdownField({
     required String? value,
     required String hint,
-    required List<String> items,
+    required List<dynamic> items,
     required ValueChanged<String?> onChanged,
   }) {
     return Container(
@@ -403,7 +442,10 @@ class _RegisterPageState extends State<RegisterPage> {
           dropdownColor: const Color(0xFFF5F0EB),
           borderRadius: BorderRadius.circular(12),
           items: items.map((item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
+            return DropdownMenuItem<String>(
+              value: item['code'].toString(), 
+              child: Text(item['name'].toString())
+            );
           }).toList(),
           onChanged: onChanged,
         ),
@@ -458,31 +500,34 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // ─── Register Button ──────────────────────────────────────────────────
   Widget _buildRegisterButton() {
+    final bool isEnabled = _agreeTerms && !_isLoading;
+
     return SizedBox(
       width: double.infinity,
       height: 54,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8B6914), Color(0xFFC8943E), Color(0xFFD4A956)],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFC8943E).withValues(alpha: 0.35),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: isEnabled ? null : const Color(0xFFD3CFCB),
+          gradient: isEnabled
+              ? const LinearGradient(
+                  colors: [Color(0xFF8B6914), Color(0xFFC8943E), Color(0xFFD4A956)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              : null,
+          boxShadow: isEnabled
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFC8943E).withValues(alpha: 0.35),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
         ),
         child: ElevatedButton(
-          onPressed: _agreeTerms
-              ? () {
-                  // Handle registration
-                }
-              : null,
+          onPressed: (_agreeTerms && !_isLoading) ? _handleRegister : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
@@ -491,15 +536,21 @@ class _RegisterPageState extends State<RegisterPage> {
               borderRadius: BorderRadius.circular(30),
             ),
           ),
-          child: const Text(
-            'BERGABUNG DENGAN ATELIER',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 2,
-            ),
-          ),
+          child: _isLoading 
+              ? const SizedBox(
+                  width: 24, 
+                  height: 24, 
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                )
+              : const Text(
+                  'BERGABUNG DENGAN ATELIER',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                  ),
+                ),
         ),
       ),
     );
