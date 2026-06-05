@@ -12,12 +12,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late Future<Map<String, dynamic>> _homeData;
+  late Future<List<Map<String, dynamic>>> _homeData;
 
   @override
   void initState() {
     super.initState();
-    _homeData = ApiService.getHomePageData();
+    _homeData = Future.wait([
+      ApiService.getHomePageData(),
+      ApiService.getProfile(),
+    ]);
   }
 
   @override
@@ -25,7 +28,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFCFAF8),
       body: SafeArea(
-        child: FutureBuilder<Map<String, dynamic>>(
+        child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _homeData,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -35,9 +38,16 @@ class _HomePageState extends State<HomePage> {
               return const Center(child: Text('Terjadi kesalahan saat memuat data.'));
             }
 
-            final data = snapshot.data?['data'] ?? {};
-            // Name is not returned in /pages/home, fallback to 'Kurator' or we can fetch getProfile separately
-            final user = {'name': 'Kurator'}; 
+            final homeRes = snapshot.data?[0] ?? {};
+            final profileRes = snapshot.data?[1] ?? {};
+
+            final data = homeRes['data'] ?? {};
+            
+            // Extract user info from profileRes
+            final userData = profileRes['data'] ?? {};
+            final String rawName = userData['name'] ?? 'Kurator';
+            final String firstName = rawName.split(' ').first;
+
             final stats = data['summary'] ?? {};
             final recommendationData = data['today_recommendation']?['perfume'];
             final recentLogs = data['scent_logs'] as List<dynamic>? ?? [];
@@ -55,7 +65,7 @@ class _HomePageState extends State<HomePage> {
                   
                   // Welcome Text
                   Text(
-                    'Selamat datang\nkembali, ${user['name'] ?? 'Kurator'}',
+                    'Selamat datang\nkembali, $firstName',
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -122,8 +132,8 @@ class _HomePageState extends State<HomePage> {
                             child: Container(
                               height: 160,
                               color: const Color(0xFFEBE6DF),
-                              child: recommendation['image'] != null
-                                  ? Image.network(recommendation['image'], fit: BoxFit.cover)
+                              child: ApiService.fixImageUrl(recommendation['image']).isNotEmpty
+                                  ? Image.network(ApiService.fixImageUrl(recommendation['image']), fit: BoxFit.cover)
                                   : const Center(child: Icon(Icons.image, size: 50, color: Colors.black12)),
                             ),
                           ),
@@ -210,13 +220,13 @@ class _HomePageState extends State<HomePage> {
                   if (recentLogs.isEmpty)
                     const Text('Belum ada entri diary terbaru.', style: TextStyle(color: Color(0xFF9E958D))),
                   ...recentLogs.map((log) {
-                    final logDate = log['log_date'] ?? '';
+                    final logDate = log['input_date'] != null ? log['input_date'].toString().split('T')[0] : '';
                     final occasion = log['occasion']?['name'] ?? '';
                     final weather = log['weather'] ?? '';
-                    final perfume = log['perfume']?['name'] ?? '';
+                    final perfume = log['title'] ?? '';
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildDiaryCard(perfume, '$occasion • $weather', log['notes'] ?? '', logDate, Icons.wb_sunny_outlined),
+                      child: _buildDiaryCard(perfume, '$occasion • $weather', log['notes_review'] ?? '', logDate, Icons.wb_sunny_outlined),
                     );
                   }).toList(),
                 ],

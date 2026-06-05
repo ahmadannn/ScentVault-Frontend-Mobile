@@ -40,6 +40,15 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (response['token'] != null) {
+      final user = response['user'];
+      if (user != null && user['role'] == 'admin') {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Admin harus login melalui website')),
+        );
+        return;
+      }
+
       await ApiService.setToken(response['token']);
       if (!mounted) return;
       Navigator.pushReplacement(

@@ -126,7 +126,7 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
 
     final body = {
       "name": _nameController.text,
-      "brand_name": _brandController.text,
+      "brand": _brandController.text,
       "description": _descController.text,
       "category_id": int.parse(_selectedCategory!),
       "concentration": _selectedConcentration,
@@ -403,6 +403,7 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
             child: DropdownButton<String>(
               isExpanded: true,
               value: _selectedCategory,
+              hint: const Text('Pilih Kategori Aroma', style: TextStyle(fontSize: 13, color: Color(0xFF9E958D))),
               icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF9E958D), size: 20),
               onChanged: (String? newValue) {
                 setState(() => _selectedCategory = newValue);

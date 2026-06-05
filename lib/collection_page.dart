@@ -313,7 +313,8 @@ class _CollectionPageState extends State<CollectionPage> {
   }
 
   Widget _buildPerfumeCard(Map<String, dynamic> perfume) {
-    final imageUrl = perfume['image_url'];
+    final rawUrl = perfume['image_url'];
+    final imageUrl = ApiService.fixImageUrl(rawUrl);
     final brand = perfume['brand_name'] ?? 'UNKNOWN BRAND';
     final name = perfume['name'] ?? 'Unknown';
     final rating = perfume['star_rating']?.toString() ?? '0.0';
@@ -344,7 +345,7 @@ class _CollectionPageState extends State<CollectionPage> {
                   color: const Color(0xFFEBE6DF),
                   width: 100,
                   height: 100,
-                  child: imageUrl != null
+                  child: imageUrl.isNotEmpty
                       ? Image.network(imageUrl, fit: BoxFit.cover)
                       : const Center(child: Icon(Icons.image, color: Colors.black12)),
                 ),

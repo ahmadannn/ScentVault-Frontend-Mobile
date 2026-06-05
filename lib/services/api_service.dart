@@ -23,6 +23,15 @@ class ApiService {
     await prefs.remove('auth_token');
   }
 
+  static String fixImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+      final uri = Uri.parse(url);
+      return 'https://scentvault-api.my.id${uri.path}';
+    }
+    return url;
+  }
+
   static Future<Map<String, String>> _getAuthHeaders() async {
     final token = await getToken();
     return {
@@ -162,7 +171,7 @@ class ApiService {
   }
 
   // --- Helper Multipart ---
-  static Future<dynamic> _multipartRequest(String method, String endpoint, Map<String, dynamic> body, {Uint8List? imageBytes, String? imageFileName}) async {
+  static Future<dynamic> _multipartRequest(String method, String endpoint, Map<String, dynamic> body, {Uint8List? imageBytes, String? imageFileName, String imageFieldName = 'image'}) async {
     final url = Uri.parse('$baseUrl$endpoint');
     if (kDebugMode) print('API MULTIPART $method Request: $url\nBody: $body\nHasImage: ${imageBytes != null}');
     try {
@@ -184,7 +193,7 @@ class ApiService {
 
       if (imageBytes != null && imageFileName != null) {
         request.files.add(http.MultipartFile.fromBytes(
-          'image',
+          imageFieldName,
           imageBytes,
           filename: imageFileName,
         ));
@@ -251,9 +260,51 @@ class ApiService {
     return res is Map<String, dynamic> ? res : {};
   }
 
+  static Future<dynamic> _patch(String endpoint, Map<String, dynamic> body) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    if (kDebugMode) print('API PATCH Request: $url\nBody: $body');
+    try {
+      final headers = await _getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      
+      final response = await http
+          .patch(url, headers: headers, body: json.encode(body))
+          .timeout(const Duration(seconds: 15));
+      if (kDebugMode) print('API PATCH Response [$endpoint] - Status: ${response.statusCode}\nBody: ${response.body}');
+      
+      return json.decode(response.body);
+    } on TimeoutException {
+      return {'error': true, 'message': 'Koneksi terputus (Timeout). Periksa internet Anda.'};
+    } catch (e) {
+      if (kDebugMode) print('API PATCH Error: $url - $e');
+      return {'error': true, 'message': 'Gagal terhubung ke server.'};
+    }
+  }
+
   static Future<Map<String, dynamic>> getProfile() async {
     final res = await _get('/me');
     return (res is Map<String, dynamic>) ? res : {};
+  }
+
+  static Future<Map<String, dynamic>> updatePassword(String currentPassword, String newPassword, String confirmPassword) async {
+    final res = await _patch('/me/password', {
+      'current_password': currentPassword,
+      'password': newPassword,
+      'password_confirmation': confirmPassword
+    });
+    return (res is Map<String, dynamic>) ? res : {};
+  }
+
+  static Future<Map<String, dynamic>> updateRegion(String regionCode) async {
+    final res = await _patch('/me/region', {
+      'region_code': regionCode
+    });
+    return (res is Map<String, dynamic>) ? res : {};
+  }
+
+  static Future<Map<String, dynamic>> updateAvatar(Uint8List imageBytes, String imageFileName) async {
+    final res = await _multipartRequest('POST', '/me/avatar', {}, imageBytes: imageBytes, imageFileName: imageFileName, imageFieldName: 'photo');
+    return res is Map<String, dynamic> ? res : {};
   }
 
   static Future<List<dynamic>> getOccasions() async {
@@ -270,7 +321,7 @@ class ApiService {
   }
 
   static Future<List<dynamic>> getScentLogs() async {
-    final res = await _get('/scentLogs');
+    final res = await _get('/scentLog');
     if (res is Map<String, dynamic> && res['data'] != null) {
       return res['data'];
     }
@@ -283,7 +334,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> deleteScentLog(int id) async {
-    final res = await _delete('/scentLogs/$id');
+    final res = await _delete('/scentLog/$id');
     return res is Map<String, dynamic> ? res : {};
   }
 }

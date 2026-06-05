@@ -20,11 +20,11 @@ class _AromaDiaryPageState extends State<AromaDiaryPage> {
 
   String? _selectedPerfumeId;
   String? _selectedOccasionId;
-  String _selectedWeather = 'cerah';
+  String _selectedWeather = 'Cerah';
   
   final _notesController = TextEditingController();
 
-  final List<String> _weathers = ['cerah', 'mendung', 'hujan', 'panas', 'dingin'];
+  final List<String> _weathers = ['Cerah', 'Berawan', 'Mendung', 'Hujan', 'Sejuk', 'Dingin'];
 
   @override
   void initState() {
@@ -75,7 +75,7 @@ class _AromaDiaryPageState extends State<AromaDiaryPage> {
       "perfume_id": int.parse(_selectedPerfumeId!),
       "occasion_id": int.parse(_selectedOccasionId!),
       "weather": _selectedWeather,
-      "notes": _notesController.text,
+      "notes_review": _notesController.text,
     };
 
     final res = await ApiService.addScentLog(body);
@@ -433,8 +433,9 @@ class _AromaDiaryPageState extends State<AromaDiaryPage> {
         final perfumeName = log['perfume']?['name'] ?? 'Unknown';
         final occasionName = log['occasion']?['name'] ?? 'Unknown';
         final weather = log['weather'] ?? 'Unknown';
-        final date = log['log_date'] ?? '';
-        final notes = log['notes'] ?? '';
+        final dateRaw = log['created_at'] ?? '';
+        final date = dateRaw.toString().split('T')[0];
+        final notes = log['notes_review'] ?? '';
         final id = log['id'];
         
         return Padding(

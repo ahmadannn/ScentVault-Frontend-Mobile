@@ -214,8 +214,8 @@ class _DetailPageState extends State<DetailPage> {
                 width: double.infinity,
                 height: 300,
                 color: const Color(0xFFEBE6DF),
-                child: imageUrl != null
-                    ? Image.network(imageUrl, fit: BoxFit.cover)
+                child: ApiService.fixImageUrl(imageUrl).isNotEmpty
+                    ? Image.network(ApiService.fixImageUrl(imageUrl), fit: BoxFit.cover)
                     : const Icon(Icons.image, size: 80, color: Colors.black12),
               ),
             ),
