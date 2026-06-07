@@ -4,18 +4,19 @@ import 'package:project_pertama/detail_page.dart';
 import 'package:shimmer/shimmer.dart';
 
 class AtelierKesesuaianPage extends StatefulWidget {
-  const AtelierKesesuaianPage({super.key});
+  final Map<String, dynamic>? initialPerfume;
+  const AtelierKesesuaianPage({super.key, this.initialPerfume});
 
   @override
   State<AtelierKesesuaianPage> createState() => _AtelierKesesuaianPageState();
 }
 
 class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
-  String _selectedWeather = 'cerah';
-  String? _selectedOccasionId;
+  String _selectedTemperature = 'normal';
+  String _selectedTimeOfDay = 'pagi';
+  String _selectedEnvironment = 'all_around';
   
-  List<dynamic> _occasions = [];
-  bool _isLoadingData = true;
+  bool _isLoadingData = false;
   bool _isFetchingRecommendation = false;
   
   List<dynamic> _recommendations = [];
@@ -23,33 +24,27 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
-  }
-
-  Future<void> _fetchData() async {
-    setState(() => _isLoadingData = true);
-    try {
-      _occasions = await ApiService.getOccasions();
-      if (_occasions.isNotEmpty) {
-        _selectedOccasionId = _occasions.first['id'].toString();
-      }
-    } catch (e) {
-      // handle err
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingData = false);
-      }
+    if (widget.initialPerfume != null) {
+      _recommendations = [
+        {
+          'perfume': widget.initialPerfume,
+          'score': 100, // Dummy score
+          'reason': 'Kondisi saat ini sangat mendukung karakter parfum Anda.', // Dummy reason
+        }
+      ];
+    } else {
+      _fetchRecommendations();
     }
   }
 
   Future<void> _fetchRecommendations() async {
-    if (_selectedOccasionId == null) return;
-    
     setState(() => _isFetchingRecommendation = true);
     
+    // Using the parameters based on the new UI
     final body = {
-      "weather": _selectedWeather,
-      "occasion_id": int.parse(_selectedOccasionId!),
+      "temperature": _selectedTemperature,
+      "time_of_day": _selectedTimeOfDay,
+      "environment": _selectedEnvironment,
       "limit": 3
     };
     
@@ -165,48 +160,50 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
                 ),
                 const SizedBox(height: 32),
                 
-                // Suhu / Weather
-                const Text('PILIH CUACA (WEATHER)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E958D), letterSpacing: 1.0)),
+                // Suhu / Temperature
+                const Text('PILIH SUHU (TEMPERATURE)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E958D), letterSpacing: 1.0)),
                 const SizedBox(height: 16),
-                _buildTempOption('dingin', 'Dingin / Sejuk', Icons.ac_unit),
+                _buildTempOption('dingin', 'Dingin', 'Untuk cuaca sejuk', Icons.ac_unit),
                 const SizedBox(height: 12),
-                _buildTempOption('cerah', 'Cerah / Normal', Icons.wb_sunny_outlined),
+                _buildTempOption('normal', 'Normal', null, Icons.wb_sunny_outlined),
                 const SizedBox(height: 12),
-                _buildTempOption('hujan', 'Hujan / Mendung', Icons.cloud),
+                _buildTempOption('panas', 'Panas', 'Aroma segar & ringan', Icons.light_mode_outlined),
                 
                 const SizedBox(height: 32),
-                // Occasion
-                const Text('KESEMPATAN (OCCASION)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E958D), letterSpacing: 1.0)),
+                // Waktu / Time of Day
+                const Text('WAKTU (TIME OF DAY)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E958D), letterSpacing: 1.0)),
                 const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _occasions.map((occ) {
-                    return _buildEnvOption(occ['name'], occ['id'].toString(), Icons.event);
-                  }).toList(),
+                Row(
+                  children: [
+                    Expanded(child: _buildEnvOption('Pagi', 'pagi', Icons.wb_twilight, _selectedTimeOfDay == 'pagi', (val) => setState(() => _selectedTimeOfDay = val))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildEnvOption('Siang', 'siang', Icons.wb_sunny_outlined, _selectedTimeOfDay == 'siang', (val) => setState(() => _selectedTimeOfDay = val))),
+                    const SizedBox(width: 8),
+                    Expanded(child: _buildEnvOption('Malam', 'malam', Icons.nightlight_round_outlined, _selectedTimeOfDay == 'malam', (val) => setState(() => _selectedTimeOfDay = val))),
+                  ],
                 ),
                 
                 const SizedBox(height: 32),
                 
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _isFetchingRecommendation ? null : _fetchRecommendations,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFCE9F72),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    ),
-                    child: _isFetchingRecommendation
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text(
-                          'CARI REKOMENDASI',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.0),
-                        ),
+                // Lingkungan / Environment
+                const Text('LINGKUNGAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF9E958D), letterSpacing: 1.0)),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F3EF),
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildEnvironmentPill('Indoor', 'indoor', Icons.home_outlined)),
+                      Expanded(child: _buildEnvironmentPill('Outdoor', 'outdoor', Icons.park_outlined)),
+                      Expanded(child: _buildEnvironmentPill('All Around', 'all_around', Icons.all_inclusive)),
+                    ],
                   ),
                 ),
                 
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
                 
                 // Recommendation Cards
                 if (_recommendations.isNotEmpty) ...[
@@ -218,10 +215,13 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
                       child: _buildRecommendationCard(rec),
                     );
                   }).toList(),
-                ] else if (_recommendations.isEmpty && !_isFetchingRecommendation && _selectedOccasionId != null) ...[
-                  const Center(
-                    child: Text('Belum ada rekomendasi. Tekan "CARI REKOMENDASI".', style: TextStyle(color: Color(0xFF9E958D))),
-                  ),
+                ] else if (_recommendations.isEmpty) ...[
+                  if (_isFetchingRecommendation)
+                    const Center(child: CircularProgressIndicator(color: Color(0xFF75553C)))
+                  else
+                    const Center(
+                      child: Text('Belum ada rekomendasi.', style: TextStyle(color: Color(0xFF9E958D))),
+                    ),
                 ],
                 const SizedBox(height: 32),
               ],
@@ -231,10 +231,13 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
     );
   }
 
-  Widget _buildTempOption(String value, String title, IconData icon) {
-    bool isSelected = _selectedWeather == value;
+  Widget _buildTempOption(String value, String title, String? subtitle, IconData icon) {
+    bool isSelected = _selectedTemperature == value;
     return GestureDetector(
-      onTap: () => setState(() => _selectedWeather = value),
+      onTap: () {
+        setState(() => _selectedTemperature = value);
+        _fetchRecommendations();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -254,7 +257,17 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E2B2A))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF2E2B2A))),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF9E958D))),
+                  ],
+                ],
+              ),
             ),
             if (isSelected) const Icon(Icons.check_circle, color: Color(0xFF75553C), size: 20),
           ],
@@ -263,12 +276,14 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
     );
   }
 
-  Widget _buildEnvOption(String title, String id, IconData icon) {
-    bool isSelected = _selectedOccasionId == id;
+  Widget _buildEnvOption(String title, String value, IconData icon, bool isSelected, Function(String) onTap) {
     return GestureDetector(
-      onTap: () => setState(() => _selectedOccasionId = id),
+      onTap: () {
+        onTap(value);
+        _fetchRecommendations();
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : const Color(0xFFF6F3EF),
           borderRadius: BorderRadius.circular(20),
@@ -276,7 +291,7 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
           boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 14, color: isSelected ? const Color(0xFF4A3728) : const Color(0xFF9E958D)),
             const SizedBox(width: 6),
@@ -287,11 +302,38 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
     );
   }
 
+  Widget _buildEnvironmentPill(String title, String value, IconData icon) {
+    bool isSelected = _selectedEnvironment == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedEnvironment = value);
+        _fetchRecommendations();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))] : [],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: isSelected ? const Color(0xFF4A3728) : const Color(0xFF9E958D)),
+            const SizedBox(height: 4),
+            Text(title, style: TextStyle(fontSize: 11, fontWeight: isSelected ? FontWeight.bold : FontWeight.w600, color: isSelected ? const Color(0xFF4A3728) : const Color(0xFF9E958D))),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRecommendationCard(dynamic recommendation) {
     final perfume = recommendation['perfume'] ?? {};
     final reason = recommendation['reason'] ?? '';
     final name = perfume['name'] ?? 'Unknown';
-    final imageUrl = perfume['image_url'];
+    final imageUrl = ApiService.fixImageUrl(perfume['image_url']);
     final notes = (perfume['notes'] as List<dynamic>?) ?? [];
 
     return Container(
@@ -311,9 +353,9 @@ class _AtelierKesesuaianPageState extends State<AtelierKesesuaianPage> {
             child: Container(
               height: 250,
               color: const Color(0xFFEBE6DF),
-              child: imageUrl != null
-                  ? Image.network(imageUrl, fit: BoxFit.cover)
-                  : const Icon(Icons.image, size: 80, color: Colors.black12),
+              child: imageUrl.isNotEmpty
+                  ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover))
+                  : Image.asset('assets/images/upload_parfum.png', fit: BoxFit.cover),
             ),
           ),
           Padding(

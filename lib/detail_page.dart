@@ -310,7 +310,7 @@ class _DetailPageState extends State<DetailPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AtelierKesesuaianPage()),
+                  MaterialPageRoute(builder: (context) => AtelierKesesuaianPage(initialPerfume: _perfumeData)),
                 );
               },
               style: ElevatedButton.styleFrom(

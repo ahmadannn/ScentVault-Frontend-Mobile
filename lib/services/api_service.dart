@@ -155,8 +155,14 @@ class ApiService {
     return (res is Map<String, dynamic>) ? res : {};
   }
 
-  static Future<Map<String, dynamic>> getCollectionPageData() async {
-    final res = await _get('/pages/perfume-collection');
+  static Future<Map<String, dynamic>> getCollectionPageData({String? categoryId, String? search, String? sort}) async {
+    List<String> queryParams = [];
+    if (categoryId != null && categoryId.isNotEmpty) queryParams.add('category_id=$categoryId');
+    if (search != null && search.isNotEmpty) queryParams.add('search=$search');
+    if (sort != null && sort.isNotEmpty) queryParams.add('sort=$sort');
+    
+    final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
+    final res = await _get('/pages/perfume-collection$queryString');
     return (res is Map<String, dynamic>) ? res : {};
   }
 

@@ -37,8 +37,11 @@ class _CollectionPageState extends State<CollectionPage> {
     });
 
     try {
-      // Pass filters if backend supports it via URL, but for now we just fetch base data
-      final response = await ApiService.getCollectionPageData();
+      final response = await ApiService.getCollectionPageData(
+        categoryId: _selectedCategoryId,
+        search: _searchQuery,
+        sort: _sort,
+      );
       
       if (response['success'] == true && response['data'] != null) {
         setState(() {
@@ -115,8 +118,11 @@ class _CollectionPageState extends State<CollectionPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: TextField(
-                              onChanged: (value) {
-                                // Implement local search or trigger API search
+                              onSubmitted: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                });
+                                _fetchData();
                               },
                               decoration: const InputDecoration(
                                 hintText: 'Cari parfum anda...',
@@ -170,18 +176,25 @@ class _CollectionPageState extends State<CollectionPage> {
                                       color: Color(0xFF63564B),
                                     ),
                                   ),
-                                  const Text(
-                                    ' Baru Ditambahkan',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF75553C),
-                                      fontWeight: FontWeight.w600,
+                                  const SizedBox(width: 4),
+                                  DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _sort,
+                                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF75553C), size: 16),
+                                      style: const TextStyle(fontSize: 13, color: Color(0xFF75553C), fontWeight: FontWeight.w600),
+                                      onChanged: (String? newValue) {
+                                        if (newValue != null) {
+                                          setState(() {
+                                            _sort = newValue;
+                                          });
+                                          _fetchData();
+                                        }
+                                      },
+                                      items: const [
+                                        DropdownMenuItem(value: 'newest', child: Text('Baru Ditambahkan')),
+                                        DropdownMenuItem(value: 'oldest', child: Text('Paling Lama')),
+                                      ],
                                     ),
-                                  ),
-                                  const Icon(
-                                    Icons.keyboard_arrow_down,
-                                    color: Color(0xFF75553C),
-                                    size: 16,
                                   ),
                                 ],
                               ),
@@ -250,8 +263,8 @@ class _CollectionPageState extends State<CollectionPage> {
       onTap: () {
         setState(() {
           _selectedCategoryId = categoryId;
-          // You might want to filter _perfumes locally or refetch
         });
+        _fetchData();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
