@@ -127,6 +127,8 @@ class _DetailPageState extends State<DetailPage> {
     final rating = data['star_rating']?.toString() ?? '0.0';
     final imageUrl = data['image_url'];
     final createdAt = data['created_at'] != null ? data['created_at'].toString().substring(0, 10) : 'N/A';
+    final categoryName = data['category_name'] ?? data['category']?['name'] ?? 'UNKNOWN CATEGORY';
+    final concentration = data['concentration'] ?? 'UNKNOWN CONCENTRATION';
 
     final notes = (data['notes'] as List<dynamic>?) ?? [];
     final topNotes = notes.where((n) => n['type'] == 'top').map((n) => n['name']).join(', ');
@@ -248,7 +250,36 @@ class _DetailPageState extends State<DetailPage> {
                     color: Color(0xFF75553C),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF6F3EF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        categoryName.toString().toUpperCase(),
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF9E958D)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF6F3EF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        concentration.toString().toUpperCase(),
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF9E958D)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {

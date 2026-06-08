@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_pertama/detail_page.dart';
+import 'package:project_pertama/aroma_diary_page.dart';
 import 'package:project_pertama/widgets/custom_top_bar.dart';
 import 'package:project_pertama/services/api_service.dart';
 import 'package:shimmer/shimmer.dart';
@@ -178,8 +179,9 @@ class _HomePageState extends State<HomePage> {
                                             ? recommendation['notes'] as List<dynamic>
                                             : recommendation['notes'].toString().replaceAll('{', '').replaceAll('}', '').split(','))
                                         .map((note) {
-                                          final text = note is Map ? note['name'] : note.toString().trim();
-                                          return text.isNotEmpty ? _buildTag(text) : const SizedBox.shrink();
+                                          final String text = (note is Map ? note['name']?.toString() : note?.toString()?.trim()) ?? '';
+                                          if (text.isEmpty || text.toLowerCase().contains('null')) return const SizedBox.shrink();
+                                          return _buildTag(text);
                                         })
                                         .toList(),
                                   ),
@@ -235,17 +237,42 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 16),
                   if (recentLogs.isEmpty)
-                    const Text('Belum ada entri diary terbaru.', style: TextStyle(color: Color(0xFF9E958D))),
-                  ...recentLogs.map((log) {
-                    final logDate = log['input_date'] != null ? log['input_date'].toString().split('T')[0] : '';
-                    final occasion = log['occasion']?['name'] ?? '';
-                    final weather = log['weather'] ?? '';
-                    final perfume = log['title'] ?? '';
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _buildDiaryCard(perfume, '$occasion • $weather', log['notes_review'] ?? '', logDate, Icons.wb_sunny_outlined),
-                    );
-                  }).toList(),
+                    const Text('Belum ada entri diary terbaru.', style: TextStyle(color: Color(0xFF9E958D)))
+                  else
+                    ...recentLogs.take(3).map((log) {
+                      final logDate = log['input_date'] != null ? log['input_date'].toString().split('T')[0] : '';
+                      final occasion = log['occasion']?['name'] ?? '';
+                      final weather = log['weather'] ?? '';
+                      final perfume = log['title'] ?? '';
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _buildDiaryCard(perfume, '$occasion • $weather', log['notes_review'] ?? '', logDate, _getWeatherIcon(weather)),
+                      );
+                    }).toList(),
+                  if (recentLogs.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
+                      child: GestureDetector(
+                        onTap: () {
+                           Navigator.push(context, MaterialPageRoute(builder: (context) => const AromaDiaryPage()));
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: const [
+                            Text(
+                              'Buka semua catatan',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFCE9F72),
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(Icons.arrow_forward, size: 16, color: Color(0xFFCE9F72)),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             );
@@ -362,6 +389,15 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  IconData _getWeatherIcon(String weather) {
+    final w = weather.toLowerCase();
+    if (w.contains('cerah')) return Icons.wb_sunny_outlined;
+    if (w.contains('mendung') || w.contains('berawan')) return Icons.cloud_outlined;
+    if (w.contains('hujan')) return Icons.water_drop_outlined;
+    if (w.contains('sejuk') || w.contains('dingin')) return Icons.ac_unit_outlined;
+    return Icons.wb_sunny_outlined;
   }
 
   Widget _buildDiaryCard(String title, String subtitle, String desc, String date, IconData icon) {

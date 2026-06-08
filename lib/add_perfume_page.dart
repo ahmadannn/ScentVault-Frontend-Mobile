@@ -81,11 +81,18 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
         setState(() {
           _categories = res['data']['categories'] ?? [];
           
-          if (widget.initialData != null && widget.initialData!['category_id'] != null) {
-            final catId = widget.initialData!['category_id'].toString();
+          if (widget.initialData != null) {
+            final catId = (widget.initialData!['category_id'] ?? widget.initialData!['category']?['id'])?.toString();
+            final catName = widget.initialData!['category_name']?.toString().toLowerCase();
+            
             // ensure catId exists in _categories
-            if (_categories.any((c) => c['id'].toString() == catId)) {
+            if (catId != null && _categories.any((c) => c['id'].toString() == catId)) {
               _selectedCategory = catId;
+            } else if (catName != null) {
+              try {
+                final match = _categories.firstWhere((c) => c['name'].toString().toLowerCase() == catName);
+                _selectedCategory = match['id'].toString();
+              } catch (_) {}
             }
           }
         });
@@ -115,6 +122,72 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama, Brand, dan Kategori wajib diisi')));
       return;
     }
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AnimatedCheckIcon(),
+                const SizedBox(height: 24),
+                const Text(
+                  'Yakin Ingin Simpan\nPerubahan?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF75553C),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  width: double.infinity,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B5E3C), Color(0xFFD6A87D)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    child: const Text('IYA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF9E958D), width: 1),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    child: const Text('TIDAK', style: TextStyle(color: Color(0xFF75553C), fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirm != true) return;
 
     setState(() {
       _isLoading = true;
@@ -196,9 +269,11 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
                       borderRadius: BorderRadius.circular(20),
                       image: _imageBytes != null 
                           ? DecorationImage(image: MemoryImage(_imageBytes!), fit: BoxFit.cover)
-                          : null,
+                          : (widget.initialData?['image_url'] != null && ApiService.fixImageUrl(widget.initialData!['image_url']).isNotEmpty)
+                              ? DecorationImage(image: NetworkImage(ApiService.fixImageUrl(widget.initialData!['image_url'])), fit: BoxFit.cover)
+                              : null,
                     ),
-                    child: _imageBytes == null
+                    child: _imageBytes == null && (widget.initialData?['image_url'] == null || ApiService.fixImageUrl(widget.initialData!['image_url']).isEmpty)
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: const [
@@ -605,6 +680,81 @@ class _AddPerfumePageState extends State<AddPerfumePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class AnimatedCheckIcon extends StatefulWidget {
+  const AnimatedCheckIcon({super.key});
+
+  @override
+  State<AnimatedCheckIcon> createState() => _AnimatedCheckIconState();
+}
+
+class _AnimatedCheckIconState extends State<AnimatedCheckIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return SizedBox(
+          width: 80,
+          height: 80,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Ripple ring moving outwards
+              Container(
+                width: 48 + (32 * _controller.value),
+                height: 48 + (32 * _controller.value),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF8B5E3C).withOpacity((1.0 - _controller.value).clamp(0.0, 1.0)),
+                    width: 2,
+                  ),
+                ),
+              ),
+              // Static Light Beige Circle Background
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF6F3EF),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              // Static Dark Brown Checkmark Circle
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF8B5E3C),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, color: Colors.white, size: 28),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

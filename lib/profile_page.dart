@@ -47,6 +47,54 @@ class _ProfilePageState extends State<ProfilePage> {
       final res = await ApiService.getProfile();
       if (res['success'] == true && res['data'] != null) {
         _profileData = res['data'];
+        final data = res['data'];
+
+        String? pCode;
+        String? kCode;
+        String? kecCode;
+        String? kelCode;
+
+        if (data['region'] != null) {
+          final region = data['region'];
+          kelCode = region['code']?.toString();
+          
+          if (region['parent'] != null) {
+            final kec = region['parent'];
+            kecCode = kec['code']?.toString();
+            
+            if (kec['parent'] != null) {
+              final kab = kec['parent'];
+              kCode = kab['code']?.toString();
+              
+              if (kab['parent'] != null) {
+                final prov = kab['parent'];
+                pCode = prov['code']?.toString();
+              }
+            }
+          }
+        }
+
+        if (pCode != null) {
+          _selectedProvinsiCode = pCode;
+          final regencies = await ApiService.getRegencies(pCode);
+          if (mounted) setState(() => _kabupatenKotaList = regencies);
+          
+          if (kCode != null) {
+            _selectedKabupatenKotaCode = kCode;
+            final districts = await ApiService.getDistricts(kCode);
+            if (mounted) setState(() => _kecamatanList = districts);
+            
+            if (kecCode != null) {
+              _selectedKecamatanCode = kecCode;
+              final villages = await ApiService.getVillages(kecCode);
+              if (mounted) setState(() => _kelurahanList = villages);
+              
+              if (kelCode != null) {
+                _selectedKelurahanCode = kelCode;
+              }
+            }
+          }
+        }
       }
     } catch (e) {
       // Handle error
@@ -540,7 +588,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: TextField(
                   controller: controller,
                   obscureText: obscure,
-                  decoration: const InputDecoration(border: InputBorder.none),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '********',
+                    hintStyle: TextStyle(color: Color(0xFFC7C5C3)),
+                  ),
                   style: const TextStyle(fontSize: 13, color: Color(0xFF63564B)),
                 ),
               ),
